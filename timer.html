@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR Form Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --purple: #7B3F5E; --purple-dark: #5C2E45; --purple-light: #F3EAF0;
+  --orange: #D4720A; --red: #B02020; --green: #2D6A2D;
+  --bg: #F7F4FB; --white: #FFFFFF; --ink: #1A1423; --sub: #6B6080;
+}
+body { 
+  font-family: 'DM Sans', sans-serif; 
+  background: var(--bg); 
+  margin: 0; 
+  height: 100vh; 
+  display: flex; 
+  flex-direction: column; 
+}
+
+/* Timer bar */
+#timerBar {
+  background: var(--purple); 
+  color: white; 
+  height: 56px; 
+  padding: 0 24px;
+  display: none; 
+  align-items: center; 
+  justify-content: space-between;
+  box-shadow: 0 2px 16px rgba(123,63,94,.35); 
+  flex-shrink: 0;
+  transition: background .3s;
+}
+#timerBar.show { display: flex; }
+#timerBar.warn { background: var(--orange); }
+#timerBar.up { background: var(--red); }
+.tb-name { 
+  font-size: 13px; 
+  font-weight: 500; 
+  max-width: 30%; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  white-space: nowrap; 
+}
+.tb-time { 
+  font-family: 'DM Mono', monospace; 
+  font-size: 24px; 
+  font-weight: 500; 
+  letter-spacing: .03em;
+}
+.tb-sess { 
+  font-size: 13px; 
+  opacity: .85; 
+  max-width: 30%; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  white-space: nowrap; 
+  text-align: right; 
+}
+
+#warnStrip { 
+  display: none; 
+  background: var(--orange); 
+  color: white; 
+  padding: 8px 20px; 
+  font-size: 13px; 
+  font-weight: 600; 
+  text-align: center; 
+  flex-shrink: 0; 
+}
+
+/* Landing page */
+#landing { 
+  flex: 1; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  padding: 20px; 
+}
+.card { 
+  background: white; 
+  border-radius: 20px; 
+  padding: 44px 40px; 
+  max-width: 480px; 
+  width: 100%; 
+  box-shadow: 0 4px 32px rgba(123,63,94,.12); 
+}
+.card-top { 
+  background: linear-gradient(135deg, var(--purple) 0%, #9B3F6E 100%); 
+  border-radius: 14px; 
+  padding: 28px; 
+  margin-bottom: 28px; 
+  color: white; 
+  text-align: center; 
+  position: relative;
+  overflow: hidden;
+}
+.card-top::before { 
+  content: '⏱'; 
+  position: absolute; 
+  right: -10px; 
+  bottom: -16px; 
+  font-size: 80px; 
+  opacity: .12; 
+}
+.card-top .tag {
+  display: inline-block;
+  background: rgba(255,255,255,.2);
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  letter-spacing: .03em;
+}
+.card-top h1 { 
+  font-size: 22px; 
+  font-weight: 700; 
+  margin-bottom: 8px; 
+  line-height: 1.3;
+  position: relative;
+  z-index: 1;
+}
+
+.pill { 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 10px; 
+  background: var(--purple-light); 
+  border: 1.5px solid rgba(123,63,94,.2);
+  border-radius: 50px; 
+  padding: 12px 24px; 
+  margin-bottom: 24px; 
+}
+.pill-dur { 
+  font-size: 20px; 
+  font-weight: 700; 
+  color: var(--purple); 
+  font-family: 'DM Mono', monospace; 
+}
+.pill-lbl { 
+  font-size: 14px; 
+  color: var(--purple); 
+  font-weight: 500; 
+}
+
+.field { margin-bottom: 20px; }
+.field label { 
+  display: block; 
+  font-size: 13px; 
+  font-weight: 600; 
+  color: var(--sub); 
+  margin-bottom: 7px; 
+}
+.field input { 
+  width: 100%; 
+  padding: 14px 16px; 
+  border: 2px solid #EDE8F5; 
+  border-radius: 10px; 
+  font-size: 15px; 
+  font-family: inherit; 
+  background: var(--bg); 
+  color: var(--ink); 
+  transition: border-color .15s;
+}
+.field input:focus { 
+  outline: none; 
+  border-color: var(--purple); 
+  background: white; 
+}
+.hint { 
+  font-size: 12px; 
+  color: var(--sub); 
+  margin-top: 4px; 
+}
+
+.btn { 
+  width: 100%; 
+  padding: 16px; 
+  background: var(--purple); 
+  color: white; 
+  border: none; 
+  border-radius: 10px; 
+  font-size: 16px; 
+  font-weight: 700; 
+  cursor: pointer; 
+  font-family: inherit; 
+  transition: background .15s, transform .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn:hover:not(:disabled) { 
+  background: var(--purple-dark); 
+  transform: translateY(-1px);
+}
+.btn:disabled { 
+  background: #C4B8CE; 
+  cursor: not-allowed; 
+  transform: none;
+}
+
+.err {
+  background: #FAEAEA;
+  color: var(--red);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  margin-top: 16px;
+  display: none;
+  line-height: 1.5;
+}
+
+/* Form container */
+#formContainer { 
+  flex: 1; 
+  display: none; 
+  position: relative; 
+  overflow: hidden; 
+}
+#formContainer.show { display: block; }
+#formFrame { 
+  width: 100%; 
+  height: 100%; 
+  border: none; 
+}
+
+/* Time up overlay */
+#timeUp { 
+  display: none; 
+  position: fixed; 
+  inset: 0; 
+  background: rgba(26,20,35,.6); 
+  align-items: center; 
+  justify-content: center; 
+  z-index: 10000; 
+  backdrop-filter: blur(4px);
+}
+#timeUp.show { display: flex; }
+.tu { 
+  background: white; 
+  border-radius: 20px; 
+  padding: 44px 40px; 
+  max-width: 420px; 
+  width: 90%; 
+  text-align: center; 
+  box-shadow: 0 16px 60px rgba(0,0,0,.3); 
+  animation: slideUp .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes slideUp {
+  from { transform: scale(.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.tu .ico { font-size: 52px; margin-bottom: 16px; }
+.tu h2 { 
+  font-size: 24px; 
+  font-weight: 700; 
+  color: var(--red); 
+  margin-bottom: 12px; 
+}
+.tu p { 
+  font-size: 14px; 
+  color: var(--sub); 
+  line-height: 1.7; 
+  margin-bottom: 28px; 
+}
+.tu button { 
+  padding: 13px 36px; 
+  background: var(--purple); 
+  color: white; 
+  border: none; 
+  border-radius: 10px; 
+  font-size: 15px; 
+  font-weight: 700; 
+  cursor: pointer; 
+  font-family: inherit; 
+  transition: background .15s;
+}
+.tu button:hover { background: var(--purple-dark); }
+
+@media (max-width: 640px) {
+  .card { padding: 32px 24px; }
+  .tb-name, .tb-sess { font-size: 11px; max-width: 25%; }
+  .tb-time { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div id="timerBar">
+  <span class="tb-name" id="tbName"></span>
+  <span class="tb-time" id="tbTime">--:--</span>
+  <span class="tb-sess" id="tbSess"></span>
+</div>
+
+<div id="warnStrip">⚠️ Only <span id="warnMins">5</span> minutes remaining — please finish and submit!</div>
+
+<div id="landing">
+  <div class="card">
+    <div class="card-top">
+      <div class="tag">TIMED ASSESSMENT</div>
+      <h1 id="sessName">Loading...</h1>
+    </div>
+
+    <div class="pill">
+      <span>⏱</span>
+      <span class="pill-dur" id="durText">-- min</span>
+      <span class="pill-lbl">timed test</span>
+    </div>
+
+    <div class="field">
+      <label for="nameInput">Your full name</label>
+      <input type="text" id="nameInput" placeholder="e.g. Sarah Johnson" maxlength="80" autocomplete="name">
+      <div class="hint">This is how your result will be recorded</div>
+    </div>
+
+    <button class="btn" id="startBtn" disabled onclick="startTimer()">
+      <span id="btnText">Start Test →</span>
+    </button>
+
+    <div class="err" id="errMsg"></div>
+  </div>
+</div>
+
+<div id="formContainer">
+  <iframe id="formFrame"></iframe>
+</div>
+
+<div id="timeUp">
+  <div class="tu">
+    <div class="ico">⏰</div>
+    <h2>Time is up!</h2>
+    <p>Your time has expired. Please scroll down in the form and click <strong>Submit</strong> now to save your answers.</p>
+    <button onclick="document.getElementById('timeUp').classList.remove('show')">OK — Submit now</button>
+  </div>
+</div>
+
+<script>
+// Parse URL parameters
+function getParams() {
+  var params = {};
+  var search = window.location.search.substring(1);
+  if (search) {
+    search.split('&').forEach(function(pair) {
+      var parts = pair.split('=');
+      params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1] || '');
+    });
+  }
+  return params;
+}
+
+var params = getParams();
+var formId = params.form || params.formId;
+var duration = parseInt(params.duration) || 30;
+var sessionName = params.name || 'Test Session';
+var warningMins = parseInt(params.warning) || 5;
+var showTimer = params.showTimer !== '0' && params.showTimer !== 'false';
+
+var remaining = duration * 60;
+var warnFired = false;
+var upFired = false;
+var interval = null;
+var studentName = '';
+
+// Initialize
+function init() {
+  if (!formId) {
+    document.getElementById('errMsg').textContent = 'Error: No form ID provided. Add ?form=YOUR_FORM_ID to the URL.';
+    document.getElementById('errMsg').style.display = 'block';
+    document.getElementById('startBtn').disabled = true;
+    return;
+  }
+
+  document.getElementById('sessName').textContent = sessionName;
+  document.getElementById('durText').textContent = duration + ' min';
+  document.getElementById('tbSess').textContent = sessionName;
+
+  document.getElementById('nameInput').addEventListener('input', function() {
+    document.getElementById('startBtn').disabled = this.value.trim().length < 2;
+  });
+}
+
+function pad(n) { 
+  return String(n).padStart(2, '0'); 
+}
+
+function formatTime(seconds) {
+  var h = Math.floor(seconds / 3600);
+  var m = Math.floor((seconds % 3600) / 60);
+  var s = seconds % 60;
+  return h > 0 ? h + ':' + pad(m) + ':' + pad(s) : pad(m) + ':' + pad(s);
+}
+
+function startTimer() {
+  studentName = document.getElementById('nameInput').value.trim();
+  if (studentName.length < 2) {
+    showError('Please enter your full name.');
+    return;
+  }
+
+  // Hide landing, show form
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('formContainer').classList.add('show');
+  
+  var formUrl = 'https://docs.google.com/forms/d/e/' + formId + '/viewform?embedded=true';
+  document.getElementById('formFrame').src = formUrl;
+
+  if (showTimer) {
+    document.getElementById('timerBar').classList.add('show');
+    document.getElementById('tbName').textContent = studentName;
+    document.getElementById('tbTime').textContent = formatTime(remaining);
+  }
+
+  // Start countdown
+  interval = setInterval(function() {
+    if (remaining > 0) remaining--;
+
+    if (showTimer) {
+      document.getElementById('tbTime').textContent = formatTime(remaining);
+    }
+
+    var warnSecs = warningMins * 60;
+    if (!warnFired && remaining <= warnSecs && remaining > 0) {
+      warnFired = true;
+      document.getElementById('warnMins').textContent = warningMins;
+      document.getElementById('warnStrip').style.display = 'block';
+      document.getElementById('timerBar').classList.add('warn');
+    }
+
+    if (!upFired && remaining <= 0) {
+      upFired = true;
+      clearInterval(interval);
+      document.getElementById('timerBar').classList.remove('warn');
+      document.getElementById('timerBar').classList.add('up');
+      document.getElementById('warnStrip').style.display = 'none';
+      document.getElementById('timeUp').classList.add('show');
+    }
+  }, 1000);
+}
+
+function showError(msg) {
+  var el = document.getElementById('errMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// Initialize on load
+init();
+</script>
+</body>
+</html>
